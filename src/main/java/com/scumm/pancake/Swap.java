@@ -15,6 +15,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.StaticGasProvider;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +74,8 @@ public class Swap {
 
         String fromToken = args[0];
         String toToken = args[1];
-        BigInteger amountIn = new BigInteger(args[2]);
+//        BigInteger amountIn = new BigInteger(args[2]);
+        BigDecimal amountInDec = new BigDecimal(args[2]);
         BigInteger impact = new BigInteger(args[3]); //滑点，10000基数， 1%滑点参数传 100
         String privateKey = args[4];
 
@@ -89,6 +91,18 @@ public class Swap {
 
         //链上获取推荐的gas price
         BigInteger gasPrice = getGasPrice(web3j);
+
+        //from token 对应的ERC20，获取精度、approve等（这里使用FLOKI的合约，只要是ERC20的就行）
+        ERC20Token erc20Token = ERC20Token.load(
+                fromToken,
+                web3j,
+                credentials,
+                new StaticGasProvider(gasPrice, BigInteger.valueOf(500000L)));
+        BigInteger decimal = erc20Token.decimals().send();
+        BigDecimal maxDecimal = new BigDecimal("10").pow(decimal.intValue());
+        BigDecimal amountInDecimal = amountInDec.multiply(maxDecimal);
+        BigInteger amountIn = amountInDecimal.toBigInteger();
+
 
         //PancakeSwapFactory（生成池子的类，可以查询是否存在某个币对）
         PancakeSwapFactory factory = PancakeSwapFactory.load(
@@ -121,13 +135,8 @@ public class Swap {
         //超过1H的交易会自动失败
         BigInteger deadline = BigInteger.valueOf(System.currentTimeMillis() / 1000 + 3600L);
 
-        //ERC20的代币合约，在用非主网币兑换时需要先进行合约授权（这里使用FLOKI的合约，只要是ERC20的就行）
+        //ERC20的代币合约，在用非主网币兑换时需要先进行合约授权
         //非主网币调用PancakeRouter时，需要允许PancakeRouter操作 fromToken 合约的资产
-        ERC20Token erc20Token = ERC20Token.load(
-                fromToken,
-                web3j,
-                credentials,
-                new StaticGasProvider(gasPrice, BigInteger.valueOf(500000L)));
 
         TransactionReceipt tr;
         if (ZERO_ADDRESS.equalsIgnoreCase(fromToken)) {
