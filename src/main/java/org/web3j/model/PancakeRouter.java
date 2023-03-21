@@ -1,26 +1,19 @@
 package org.web3j.model;
 
-import io.reactivex.Flowable;
-import io.reactivex.functions.Function;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.web3j.abi.EventEncoder;
+import java.util.concurrent.Callable;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.DynamicArray;
+import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.RemoteFunctionCall;
-import org.web3j.protocol.core.methods.request.EthFilter;
-import org.web3j.protocol.core.methods.response.BaseEventResponse;
-import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
@@ -39,27 +32,53 @@ import org.web3j.tx.gas.ContractGasProvider;
 public class PancakeRouter extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
-    public static final String FUNC_INIT_CODE_PAIR_HASH = "INIT_CODE_PAIR_HASH";
+    public static final String FUNC_WETH = "WETH";
 
-    public static final String FUNC_ALLPAIRS = "allPairs";
+    public static final String FUNC_ADDLIQUIDITY = "addLiquidity";
 
-    public static final String FUNC_ALLPAIRSLENGTH = "allPairsLength";
+    public static final String FUNC_ADDLIQUIDITYETH = "addLiquidityETH";
 
-    public static final String FUNC_CREATEPAIR = "createPair";
+    public static final String FUNC_FACTORY = "factory";
 
-    public static final String FUNC_FEETO = "feeTo";
+    public static final String FUNC_GETAMOUNTIN = "getAmountIn";
 
-    public static final String FUNC_FEETOSETTER = "feeToSetter";
+    public static final String FUNC_GETAMOUNTOUT = "getAmountOut";
 
-    public static final String FUNC_GETPAIR = "getPair";
+    public static final String FUNC_GETAMOUNTSIN = "getAmountsIn";
 
-    public static final String FUNC_SETFEETO = "setFeeTo";
+    public static final String FUNC_GETAMOUNTSOUT = "getAmountsOut";
 
-    public static final String FUNC_SETFEETOSETTER = "setFeeToSetter";
+    public static final String FUNC_QUOTE = "quote";
 
-    public static final Event PAIRCREATED_EVENT = new Event("PairCreated", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
-    ;
+    public static final String FUNC_REMOVELIQUIDITY = "removeLiquidity";
+
+    public static final String FUNC_REMOVELIQUIDITYETH = "removeLiquidityETH";
+
+    public static final String FUNC_REMOVELIQUIDITYETHSUPPORTINGFEEONTRANSFERTOKENS = "removeLiquidityETHSupportingFeeOnTransferTokens";
+
+    public static final String FUNC_REMOVELIQUIDITYETHWITHPERMIT = "removeLiquidityETHWithPermit";
+
+    public static final String FUNC_REMOVELIQUIDITYETHWITHPERMITSUPPORTINGFEEONTRANSFERTOKENS = "removeLiquidityETHWithPermitSupportingFeeOnTransferTokens";
+
+    public static final String FUNC_REMOVELIQUIDITYWITHPERMIT = "removeLiquidityWithPermit";
+
+    public static final String FUNC_SWAPETHFOREXACTTOKENS = "swapETHForExactTokens";
+
+    public static final String FUNC_SWAPEXACTETHFORTOKENS = "swapExactETHForTokens";
+
+    public static final String FUNC_SWAPEXACTETHFORTOKENSSUPPORTINGFEEONTRANSFERTOKENS = "swapExactETHForTokensSupportingFeeOnTransferTokens";
+
+    public static final String FUNC_SWAPEXACTTOKENSFORETH = "swapExactTokensForETH";
+
+    public static final String FUNC_SWAPEXACTTOKENSFORETHSUPPORTINGFEEONTRANSFERTOKENS = "swapExactTokensForETHSupportingFeeOnTransferTokens";
+
+    public static final String FUNC_SWAPEXACTTOKENSFORTOKENS = "swapExactTokensForTokens";
+
+    public static final String FUNC_SWAPEXACTTOKENSFORTOKENSSUPPORTINGFEEONTRANSFERTOKENS = "swapExactTokensForTokensSupportingFeeOnTransferTokens";
+
+    public static final String FUNC_SWAPTOKENSFOREXACTETH = "swapTokensForExactETH";
+
+    public static final String FUNC_SWAPTOKENSFOREXACTTOKENS = "swapTokensForExactTokens";
 
     @Deprecated
     protected PancakeRouter(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
@@ -79,107 +98,322 @@ public class PancakeRouter extends Contract {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
-    public static List<PairCreatedEventResponse> getPairCreatedEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = staticExtractEventParametersWithLog(PAIRCREATED_EVENT, transactionReceipt);
-        ArrayList<PairCreatedEventResponse> responses = new ArrayList<PairCreatedEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            PairCreatedEventResponse typedResponse = new PairCreatedEventResponse();
-            typedResponse.log = eventValues.getLog();
-            typedResponse.token0 = (String) eventValues.getIndexedValues().get(0).getValue();
-            typedResponse.token1 = (String) eventValues.getIndexedValues().get(1).getValue();
-            typedResponse.pair = (String) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.param3 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-            responses.add(typedResponse);
-        }
-        return responses;
-    }
-
-    public Flowable<PairCreatedEventResponse> pairCreatedEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, PairCreatedEventResponse>() {
-            @Override
-            public PairCreatedEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(PAIRCREATED_EVENT, log);
-                PairCreatedEventResponse typedResponse = new PairCreatedEventResponse();
-                typedResponse.log = log;
-                typedResponse.token0 = (String) eventValues.getIndexedValues().get(0).getValue();
-                typedResponse.token1 = (String) eventValues.getIndexedValues().get(1).getValue();
-                typedResponse.pair = (String) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.param3 = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-                return typedResponse;
-            }
-        });
-    }
-
-    public Flowable<PairCreatedEventResponse> pairCreatedEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(PAIRCREATED_EVENT));
-        return pairCreatedEventFlowable(filter);
-    }
-
-    public RemoteFunctionCall<byte[]> INIT_CODE_PAIR_HASH() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_INIT_CODE_PAIR_HASH, 
+    public RemoteFunctionCall<String> WETH() {
+        final Function function = new Function(FUNC_WETH, 
                 Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
-        return executeRemoteCallSingleValueReturn(function, byte[].class);
-    }
-
-    public RemoteFunctionCall<String> allPairs(BigInteger param0) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_ALLPAIRS, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
-    public RemoteFunctionCall<BigInteger> allPairsLength() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_ALLPAIRSLENGTH, 
+    public RemoteFunctionCall<TransactionReceipt> addLiquidity(String tokenA, String tokenB, BigInteger amountADesired, BigInteger amountBDesired, BigInteger amountAMin, BigInteger amountBMin, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_ADDLIQUIDITY, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, tokenA), 
+                new org.web3j.abi.datatypes.Address(160, tokenB), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountADesired), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountBDesired), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountAMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountBMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> addLiquidityETH(String token, BigInteger amountTokenDesired, BigInteger amountTokenMin, BigInteger amountETHMin, String to, BigInteger deadline, BigInteger weiValue) {
+        final Function function = new Function(
+                FUNC_ADDLIQUIDITYETH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, token), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenDesired), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountETHMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function, weiValue);
+    }
+
+    public RemoteFunctionCall<String> factory() {
+        final Function function = new Function(FUNC_FACTORY, 
                 Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> getAmountIn(BigInteger amountOut, BigInteger reserveIn, BigInteger reserveOut) {
+        final Function function = new Function(FUNC_GETAMOUNTIN, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOut), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveOut)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> createPair(String tokenA, String tokenB) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_CREATEPAIR, 
+    public RemoteFunctionCall<BigInteger> getAmountOut(BigInteger amountIn, BigInteger reserveIn, BigInteger reserveOut) {
+        final Function function = new Function(FUNC_GETAMOUNTOUT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveOut)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<List> getAmountsIn(BigInteger amountOut, List<String> path) {
+        final Function function = new Function(FUNC_GETAMOUNTSIN, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOut), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class))), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<DynamicArray<Uint256>>() {}));
+        return new RemoteFunctionCall<List>(function,
+                new Callable<List>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public List call() throws Exception {
+                        List<Type> result = (List<Type>) executeCallSingleValueReturn(function, List.class);
+                        return convertToNative(result);
+                    }
+                });
+    }
+
+    public RemoteFunctionCall<List> getAmountsOut(BigInteger amountIn, List<String> path) {
+        final Function function = new Function(FUNC_GETAMOUNTSOUT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class))), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<DynamicArray<Uint256>>() {}));
+        return new RemoteFunctionCall<List>(function,
+                new Callable<List>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public List call() throws Exception {
+                        List<Type> result = (List<Type>) executeCallSingleValueReturn(function, List.class);
+                        return convertToNative(result);
+                    }
+                });
+    }
+
+    public RemoteFunctionCall<BigInteger> quote(BigInteger amountA, BigInteger reserveA, BigInteger reserveB) {
+        final Function function = new Function(FUNC_QUOTE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountA), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveA), 
+                new org.web3j.abi.datatypes.generated.Uint256(reserveB)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidity(String tokenA, String tokenB, BigInteger liquidity, BigInteger amountAMin, BigInteger amountBMin, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITY, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, tokenA), 
-                new org.web3j.abi.datatypes.Address(160, tokenB)), 
+                new org.web3j.abi.datatypes.Address(160, tokenB), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountAMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountBMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<String> feeTo() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_FEETO, 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
-    }
-
-    public RemoteFunctionCall<String> feeToSetter() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_FEETOSETTER, 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
-    }
-
-    public RemoteFunctionCall<String> getPair(String param0, String param1) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETPAIR, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, param0), 
-                new org.web3j.abi.datatypes.Address(160, param1)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
-    }
-
-    public RemoteFunctionCall<TransactionReceipt> setFeeTo(String _feeTo) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_SETFEETO, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _feeTo)), 
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidityETH(String token, BigInteger liquidity, BigInteger amountTokenMin, BigInteger amountETHMin, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITYETH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, token), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountETHMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setFeeToSetter(String _feeToSetter) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_SETFEETOSETTER, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, _feeToSetter)), 
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidityETHSupportingFeeOnTransferTokens(String token, BigInteger liquidity, BigInteger amountTokenMin, BigInteger amountETHMin, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITYETHSUPPORTINGFEEONTRANSFERTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, token), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountETHMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidityETHWithPermit(String token, BigInteger liquidity, BigInteger amountTokenMin, BigInteger amountETHMin, String to, BigInteger deadline, Boolean approveMax, BigInteger v, byte[] r, byte[] s) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITYETHWITHPERMIT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, token), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountETHMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline), 
+                new org.web3j.abi.datatypes.Bool(approveMax), 
+                new org.web3j.abi.datatypes.generated.Uint8(v), 
+                new org.web3j.abi.datatypes.generated.Bytes32(r), 
+                new org.web3j.abi.datatypes.generated.Bytes32(s)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(String token, BigInteger liquidity, BigInteger amountTokenMin, BigInteger amountETHMin, String to, BigInteger deadline, Boolean approveMax, BigInteger v, byte[] r, byte[] s) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITYETHWITHPERMITSUPPORTINGFEEONTRANSFERTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, token), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountTokenMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountETHMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline), 
+                new org.web3j.abi.datatypes.Bool(approveMax), 
+                new org.web3j.abi.datatypes.generated.Uint8(v), 
+                new org.web3j.abi.datatypes.generated.Bytes32(r), 
+                new org.web3j.abi.datatypes.generated.Bytes32(s)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> removeLiquidityWithPermit(String tokenA, String tokenB, BigInteger liquidity, BigInteger amountAMin, BigInteger amountBMin, String to, BigInteger deadline, Boolean approveMax, BigInteger v, byte[] r, byte[] s) {
+        final Function function = new Function(
+                FUNC_REMOVELIQUIDITYWITHPERMIT, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, tokenA), 
+                new org.web3j.abi.datatypes.Address(160, tokenB), 
+                new org.web3j.abi.datatypes.generated.Uint256(liquidity), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountAMin), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountBMin), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline), 
+                new org.web3j.abi.datatypes.Bool(approveMax), 
+                new org.web3j.abi.datatypes.generated.Uint8(v), 
+                new org.web3j.abi.datatypes.generated.Bytes32(r), 
+                new org.web3j.abi.datatypes.generated.Bytes32(s)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapETHForExactTokens(BigInteger amountOut, List<String> path, String to, BigInteger deadline, BigInteger weiValue) {
+        final Function function = new Function(
+                FUNC_SWAPETHFOREXACTTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOut), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function, weiValue);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactETHForTokens(BigInteger amountOutMin, List<String> path, String to, BigInteger deadline, BigInteger weiValue) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTETHFORTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function, weiValue);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactETHForTokensSupportingFeeOnTransferTokens(BigInteger amountOutMin, List<String> path, String to, BigInteger deadline, BigInteger weiValue) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTETHFORTOKENSSUPPORTINGFEEONTRANSFERTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function, weiValue);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactTokensForETH(BigInteger amountIn, BigInteger amountOutMin, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTTOKENSFORETH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactTokensForETHSupportingFeeOnTransferTokens(BigInteger amountIn, BigInteger amountOutMin, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTTOKENSFORETHSUPPORTINGFEEONTRANSFERTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactTokensForTokens(BigInteger amountIn, BigInteger amountOutMin, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTTOKENSFORTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapExactTokensForTokensSupportingFeeOnTransferTokens(BigInteger amountIn, BigInteger amountOutMin, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPEXACTTOKENSFORTOKENSSUPPORTINGFEEONTRANSFERTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountIn), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountOutMin), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapTokensForExactETH(BigInteger amountOut, BigInteger amountInMax, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPTOKENSFOREXACTETH, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOut), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountInMax), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> swapTokensForExactTokens(BigInteger amountOut, BigInteger amountInMax, List<String> path, String to, BigInteger deadline) {
+        final Function function = new Function(
+                FUNC_SWAPTOKENSFOREXACTTOKENS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(amountOut), 
+                new org.web3j.abi.datatypes.generated.Uint256(amountInMax), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.Address>(
+                        org.web3j.abi.datatypes.Address.class,
+                        org.web3j.abi.Utils.typeMap(path, org.web3j.abi.datatypes.Address.class)), 
+                new org.web3j.abi.datatypes.Address(160, to), 
+                new org.web3j.abi.datatypes.generated.Uint256(deadline)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -200,15 +434,5 @@ public class PancakeRouter extends Contract {
 
     public static PancakeRouter load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         return new PancakeRouter(contractAddress, web3j, transactionManager, contractGasProvider);
-    }
-
-    public static class PairCreatedEventResponse extends BaseEventResponse {
-        public String token0;
-
-        public String token1;
-
-        public String pair;
-
-        public BigInteger param3;
     }
 }
