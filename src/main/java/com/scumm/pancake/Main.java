@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-public class Swap {
+public class Main {
 
     //零地址：主网币
     private static String ZERO_ADDRESS;
