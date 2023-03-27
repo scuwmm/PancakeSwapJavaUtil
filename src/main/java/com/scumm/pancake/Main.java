@@ -94,7 +94,7 @@ public class Main {
 
         //from token 对应的ERC20，获取精度、approve等（这里使用FLOKI的合约，只要是ERC20的就行）
         ERC20Token erc20Token = ERC20Token.load(
-                fromToken,
+                ZERO_ADDRESS.equalsIgnoreCase(fromToken) ? WBNB_ADDRESS : fromToken,
                 web3j,
                 credentials,
                 new StaticGasProvider(gasPrice, BigInteger.valueOf(500000L)));
