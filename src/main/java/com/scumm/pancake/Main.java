@@ -46,7 +46,7 @@ public class Main {
 
     static {
         try {
-            File file = new File("src/main/resources/goerli.properties");
+            File file = new File("src/main/resources/main.properties");
             InputStream in = new FileInputStream(file);
             Properties props = new Properties();
             InputStreamReader inputStreamReader = new InputStreamReader(in, "UTF-8");
@@ -196,13 +196,14 @@ public class Main {
         if (StringUtils.isNotBlank(pair)) { //
             return Arrays.asList(fromToken, toToken);
         } else {
-            String url = String.format(GET_BEST_PATH_URL, fromToken, toToken, amountIn);
-            Request req = new Request.Builder().url(url).build();
-            Response rsp = okHttpClient.newCall(req).execute();
-            String body = rsp.body().toString();
-            JSONObject jo = JSONObject.parseObject(body);
-            String data = jo.getString("Data");
-            return JSONObject.parseArray(data, String.class);
+//            String url = String.format(GET_BEST_PATH_URL, fromToken, toToken, amountIn);
+//            Request req = new Request.Builder().url(url).build();
+//            Response rsp = okHttpClient.newCall(req).execute();
+//            String body = rsp.body().toString();
+//            JSONObject jo = JSONObject.parseObject(body);
+//            String data = jo.getString("Data");
+//            return JSONObject.parseArray(data, String.class);
+            throw new Exception("没有池子！！");
         }
 
     }

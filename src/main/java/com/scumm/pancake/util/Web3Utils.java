@@ -1,4 +1,4 @@
-package com.scumm.pancake;
+package com.scumm.pancake.util;
 
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
